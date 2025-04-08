@@ -1,41 +1,57 @@
-22
-Check here Daily to get Motivated.
-randffff
-1. Good-Old-Days is coming.. 
-2. Good-Old-Days is coming.. 
-3. Good-Old-Days is coming.. 
-4. Good-Old-Days is coming.. 
-5. This is the beggining..
-6. ftfuu tdd ert
-7. This is the beggining..
-8. Try to be First
-fgdd s s 
-po Soldd file to be created
-figure out
-Take control
-Take it easy
-Breath deep
-i'm legend
-Keep it on
-to be or not to be 
-Tp.ssfr .rtytu \sd 
-We are the young
-absoulate premium .sdf 
-heavy load
-you are sentenced to success
-ddgrdssxxx
-From now on
-Gonna Make it 
-sxssss
-remium
-Good-Old-Days is coming.. 
-Take the rest of 
-ionetario
-add note
-that all
-. Good-Old-Days is coming.. 
-5. This is the beggining..
-range over
-Danny
-wwegsgs gs ss
-brooo
+import pdfplumber
+import docx
+import re
+import pandas as pd
+import os
+
+def extract_text_from_pdf(file_path):
+    text = ''
+    with pdfplumber.open(file_path) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text() + '\n'
+    return text
+
+def extract_text_from_docx(file_path):
+    doc = docx.Document(file_path)
+    return '\n'.join([para.text for para in doc.paragraphs])
+
+def extract_info(text):
+    name = re.findall(r'(?:Name|Full Name)[:\- ]*(.*)', text, re.IGNORECASE)
+    email = re.findall(r'[\w\.-]+@[\w\.-]+', text)
+    phone = re.findall(r'\+?\d[\d\-\s]{8,}\d', text)
+    education = re.findall(r'(Bachelor|Master|PhD|B\.Sc|M\.Sc|Bachelors|Masters|دکترا|کارشناسی|کارشناسی ارشد)', text, re.IGNORECASE)
+    skills_section = re.findall(r'Skills[:\-]?\s*(.*?)\n\n', text, re.DOTALL | re.IGNORECASE)
+    experience_section = re.findall(r'(Experience|Work History|سوابق کاری)[:\-]?\s*(.*?)\n\n', text, re.DOTALL | re.IGNORECASE)
+
+    info = {
+        'Name': name[0] if name else '',
+        'Email': email[0] if email else '',
+        'Phone': phone[0] if phone else '',
+        'Education': ', '.join(set(education)) if education else '',
+        'Skills': skills_section[0] if skills_section else '',
+        'Experience': experience_section[0][1] if experience_section else ''
+    }
+    return info
+
+def parse_cv(file_path):
+    if file_path.endswith('.pdf'):
+        text = extract_text_from_pdf(file_path)
+    elif file_path.endswith('.docx'):
+        text = extract_text_from_docx(file_path)
+    else:
+        raise ValueError("Unsupported file type. Use .pdf or .docx")
+
+    info = extract_info(text)
+    df = pd.DataFrame([info])
+    return df
+
+# مثال استفاده
+if __name__ == '__main__':
+    path = 'your_cv_file.pdf'  # یا .docx
+    if os.path.exists(path):
+        result_df = parse_cv(path)
+        print(result_df)
+        result_df.to_csv("parsed_cv_info.csv", index=False)
+        print("✅ ذخیره شد در parsed_cv_info.csv")
+    else:
+        print("❌ فایل پیدا نشد.")
